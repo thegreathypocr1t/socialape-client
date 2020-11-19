@@ -3,6 +3,8 @@ import PropTypes from "prop-types";
 import axios from "axios";
 import Scream from "../components/scream/Scream";
 import StaticProfile from "../components/profile/StaticProfile";
+import ScreamSkeleton from "../util/ScreamSkeleton";
+import ProfileSkeleton from "../util/ProfileSkeleton";
 
 // MUI
 import Grid from "@material-ui/core/Grid";
@@ -13,11 +15,20 @@ import { getUserData } from "../redux/actions/dataActions";
 
 export class user extends Component {
     state = {
-        profile: null
+        profile: null,
+        screamIdParam: null
     };
 
     componentDidMount() {
         const handle = this.props.match.params.handle;
+        const screamId = this.props.match.params.screamId;
+        console.log("this.props.match.params", this.props.match.params)
+
+        if(screamId) {
+            this.setState({screamIdParam: screamId});
+            console.log("has param screamId")
+        }
+
         this.props.getUserData(handle);
         axios.get(`/user/${handle}`)
         .then((res) => {
@@ -32,13 +43,21 @@ export class user extends Component {
 
     render() {
         const {screams, loading} = this.props.data;
+        const {screamIdParam} = this.state;
         const screamsMarkup = loading ? (
-            <p>Loading...</p>
+            <ScreamSkeleton/>
         ) : screams === null ? (
             <p>This user haven't posted a scream yet.</p>
-        ) : (
+        ) : !screamIdParam ? (
             screams.map((scream) => <Scream key={scream.screamId} scream={scream}/>)
-        );
+        ) : (
+            screams.map(scream => {
+                if(scream.screamId !== screamIdParam)
+                    return <Scream key={scream.screamId} scream={scream}/>
+                else 
+                    return <Scream key={scream.screamId} scream={scream} openDialog/>
+            })
+        )
 
         return (
             <Grid container spacing={2}>
@@ -47,7 +66,7 @@ export class user extends Component {
                 </Grid>
                 <Grid item sm={4} xs={12}>
                     {this.state.profile === null ? (
-                        <p>Loading Profile...</p>
+                        <ProfileSkeleton/>
                     ): (
                         <StaticProfile profile={this.state.profile}/>
                     )}
